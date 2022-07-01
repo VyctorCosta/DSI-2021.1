@@ -118,6 +118,9 @@ class _RandomWordsState extends State<RandomWords> {
                   icon: const Icon(CupertinoIcons.delete),
                   onPressed: () {
                     setState(() {
+                      if (alreadySaved) {
+                        _saved.remove(_suggestions[index]);
+                      }
                       _suggestions.removeAt(index);
                     });
                   },
