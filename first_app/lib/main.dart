@@ -38,6 +38,7 @@ class _RandomWordsState extends State<RandomWords> {
   final _suggestions = <WordPair>[];
   final _saved = <WordPair>{};
   final _biggerFont = const TextStyle(fontSize: 18);
+  bool _isCardMode = false;
 
   void _pushSaved() {
     Navigator.of(context).push(MaterialPageRoute<void>(builder: (context) {
@@ -68,68 +69,159 @@ class _RandomWordsState extends State<RandomWords> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Startup Name Generator"),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.list),
-            onPressed: _pushSaved,
-            tooltip: "Saved Suggestions",
-          )
-        ],
-      ),
-      body: ListView.builder(
-        padding: const EdgeInsets.all(16.0),
-        itemBuilder: (context, i) {
-          if (i.isOdd) return const Divider();
-
-          final index = i ~/ 2;
-          if (index >= _suggestions.length) {
-            _suggestions.addAll(generateWordPairs().take(10));
-          }
-
-          final alreadySaved = _saved.contains(_suggestions[index]);
-
-          return ListTile(
-            title: Text(
-              _suggestions[index].asPascalCase,
-              style: _biggerFont,
-            ),
-            trailing: Wrap(
-              spacing: 20,
-              children: <Widget>[
-                IconButton(
-                  icon: Icon(
-                    alreadySaved ? Icons.favorite : Icons.favorite_border,
-                    color: alreadySaved ? Colors.red : null,
-                    semanticLabel: alreadySaved ? "Removed from saved" : "Save",
+        appBar: AppBar(
+          title: const Text("Startup Name Generator"),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.list),
+              onPressed: _pushSaved,
+              tooltip: "Saved Suggestions",
+            )
+          ],
+        ),
+        body: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            SizedBox(
+              width: 200,
+              child: SwitchListTile(
+                  title: const Text(
+                    'Change Visualization',
+                    textAlign: TextAlign.center,
                   ),
-                  onPressed: () {
+                  value: _isCardMode,
+                  onChanged: (_) {
                     setState(() {
-                      if (alreadySaved) {
-                        _saved.remove(_suggestions[index]);
-                      } else {
-                        _saved.add(_suggestions[index]);
-                      }
+                      _isCardMode = !_isCardMode;
                     });
-                  },
-                ),
-                IconButton(
-                  icon: const Icon(CupertinoIcons.delete),
-                  onPressed: () {
-                    setState(() {
-                      if (alreadySaved) {
-                        _saved.remove(_suggestions[index]);
-                      }
-                      _suggestions.removeAt(index);
-                    });
-                  },
-                )
-              ],
+                  }),
             ),
-          );
-        },
-      ),
-    );
+            const SizedBox(height: 10),
+            Expanded(
+              child: _isCardMode
+                  ? GridView.builder(
+                      padding: const EdgeInsets.all(16),
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 2,
+                              mainAxisExtent: 80,
+                              mainAxisSpacing: 40),
+                      itemBuilder: (context, i) {
+                        final index = i;
+                        if (index >= _suggestions.length) {
+                          _suggestions.addAll(generateWordPairs().take(10));
+                        }
+
+                        final alreadySaved =
+                            _saved.contains(_suggestions[index]);
+
+                        return GridTile(
+                          footer: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
+                            child: Wrap(
+                              alignment: WrapAlignment.spaceBetween,
+                              children: <Widget>[
+                                IconButton(
+                                  icon: Icon(
+                                    alreadySaved
+                                        ? Icons.favorite
+                                        : Icons.favorite_border,
+                                    color: alreadySaved ? Colors.red : null,
+                                    semanticLabel: alreadySaved
+                                        ? "Removed from saved"
+                                        : "Save",
+                                  ),
+                                  onPressed: () {
+                                    setState(() {
+                                      if (alreadySaved) {
+                                        _saved.remove(_suggestions[index]);
+                                      } else {
+                                        _saved.add(_suggestions[index]);
+                                      }
+                                    });
+                                  },
+                                ),
+                                IconButton(
+                                  icon: const Icon(CupertinoIcons.delete),
+                                  onPressed: () {
+                                    setState(() {
+                                      if (alreadySaved) {
+                                        _saved.remove(_suggestions[index]);
+                                      }
+                                      _suggestions.removeAt(index);
+                                    });
+                                  },
+                                )
+                              ],
+                            ),
+                          ),
+                          child: Text(
+                            _suggestions[index].asPascalCase,
+                            style: _biggerFont,
+                            textAlign: TextAlign.center,
+                          ),
+                        );
+                      },
+                    )
+                  : ListView.builder(
+                      padding: const EdgeInsets.all(16.0),
+                      itemBuilder: (context, i) {
+                        if (i.isOdd) return const Divider();
+
+                        final index = i ~/ 2;
+                        if (index >= _suggestions.length) {
+                          _suggestions.addAll(generateWordPairs().take(10));
+                        }
+
+                        final alreadySaved =
+                            _saved.contains(_suggestions[index]);
+
+                        return ListTile(
+                          title: Text(
+                            _suggestions[index].asPascalCase,
+                            style: _biggerFont,
+                          ),
+                          trailing: Wrap(
+                            spacing: 20,
+                            children: <Widget>[
+                              IconButton(
+                                icon: Icon(
+                                  alreadySaved
+                                      ? Icons.favorite
+                                      : Icons.favorite_border,
+                                  color: alreadySaved ? Colors.red : null,
+                                  semanticLabel: alreadySaved
+                                      ? "Removed from saved"
+                                      : "Save",
+                                ),
+                                onPressed: () {
+                                  setState(() {
+                                    if (alreadySaved) {
+                                      _saved.remove(_suggestions[index]);
+                                    } else {
+                                      _saved.add(_suggestions[index]);
+                                    }
+                                  });
+                                },
+                              ),
+                              IconButton(
+                                icon: const Icon(CupertinoIcons.delete),
+                                onPressed: () {
+                                  setState(() {
+                                    if (alreadySaved) {
+                                      _saved.remove(_suggestions[index]);
+                                    }
+                                    _suggestions.removeAt(index);
+                                  });
+                                },
+                              )
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+            )
+          ],
+        ));
   }
 }
