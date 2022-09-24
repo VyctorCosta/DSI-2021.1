@@ -92,26 +92,42 @@ class _RandomWordsState extends State<RandomWords> {
         body: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            SizedBox(
-              width: 200,
-              child: SwitchListTile(
-                  title: const Text(
-                    'Change Visualization',
-                    textAlign: TextAlign.center,
-                  ),
-                  value: _isCardMode,
-                  onChanged: (_) {
-                    setState(() {
-                      _isCardMode = !_isCardMode;
-                    });
-                  }),
+            Wrap(
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                SizedBox(
+                  width: 200,
+                  child: SwitchListTile(
+                      title: const Text(
+                        'Change Visualization',
+                        textAlign: TextAlign.center,
+                      ),
+                      value: _isCardMode,
+                      onChanged: (_) {
+                        setState(() {
+                          _isCardMode = !_isCardMode;
+                        });
+                      }),
+                ),
+                IconButton(
+                    onPressed: () {
+                      Navigator.pushNamed(context, '/edit', arguments: {
+                        'type': 'add',
+                        'suggestions': _suggestions
+                      }).then((_) => setState((() {})));
+                    },
+                    icon: const Icon(
+                      Icons.add,
+                      size: 34,
+                    ))
+              ],
             ),
             const SizedBox(height: 10),
             Expanded(
               child: _isCardMode
                   ? GridView.builder(
                       padding: const EdgeInsets.all(16),
-                      itemCount: 20,
+                      itemCount: _suggestions.length,
                       gridDelegate:
                           const SliverGridDelegateWithFixedCrossAxisCount(
                               crossAxisCount: 2,
@@ -182,7 +198,7 @@ class _RandomWordsState extends State<RandomWords> {
                     )
                   : ListView.builder(
                       padding: const EdgeInsets.all(16.0),
-                      itemCount: 40,
+                      itemCount: _suggestions.length * 2,
                       itemBuilder: (context, i) {
                         if (i.isOdd) return const Divider();
 

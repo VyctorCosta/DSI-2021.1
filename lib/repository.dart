@@ -31,4 +31,8 @@ class Repository {
   changeWordByIndex(String newString, int index) {
     _list[index].changeWord(newString);
   }
+
+  addWord(String word) {
+    _list.add(Word(text: word, textPascal: word));
+  }
 }
