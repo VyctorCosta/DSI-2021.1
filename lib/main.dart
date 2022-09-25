@@ -2,13 +2,17 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:first_app/edit.dart';
 import 'package:first_app/repository.dart';
 import 'package:first_app/word.dart';
 import 'package:flutter/cupertino.dart';
 import "package:flutter/material.dart";
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
   runApp(const MyApp());
 }
 
@@ -40,14 +44,28 @@ class RandomWords extends StatefulWidget {
 }
 
 class _RandomWordsState extends State<RandomWords> {
-  final Repository _suggestions = Repository();
+  Repository? _suggestions;
   final _saved = <Word>{};
   final _biggerFont = const TextStyle(fontSize: 18);
   bool _isCardMode = false;
+  FirebaseFirestore db = FirebaseFirestore.instance;
 
   @override
   void initState() {
     super.initState();
+    (() async {
+      var response = await db.collection('Words').get();
+      List<Map<String, dynamic>> list = [];
+
+      for (var doc in response.docs) {
+        var obj = doc.data();
+        obj['id'] = doc.id;
+        list.add(obj);
+      }
+      setState(() {
+        _suggestions = Repository(list);
+      });
+    })();
   }
 
   void _pushSaved() {
@@ -114,7 +132,9 @@ class _RandomWordsState extends State<RandomWords> {
                       Navigator.pushNamed(context, '/edit', arguments: {
                         'type': 'add',
                         'suggestions': _suggestions
-                      }).then((_) => setState((() {})));
+                      }).then((_) => setState((() {
+                            _suggestions = _suggestions;
+                          })));
                     },
                     icon: const Icon(
                       Icons.add,
@@ -127,20 +147,21 @@ class _RandomWordsState extends State<RandomWords> {
               child: _isCardMode
                   ? GridView.builder(
                       padding: const EdgeInsets.all(16),
-                      itemCount: _suggestions.length,
+                      itemCount:
+                          _suggestions != null ? _suggestions!.length * 2 : 0,
                       gridDelegate:
                           const SliverGridDelegateWithFixedCrossAxisCount(
                               crossAxisCount: 2,
                               mainAxisExtent: 80,
                               mainAxisSpacing: 40),
                       itemBuilder: (context, i) {
-                        if (i >= _suggestions.length) return const Text('');
+                        if (i >= _suggestions!.length) return const Text('');
 
                         final alreadySaved =
-                            _saved.contains(_suggestions.index(i));
+                            _saved.contains(_suggestions!.index(i));
 
                         return InkResponse(
-                          onTap: () {
+                          onTap: () async {
                             Navigator.pushNamed(context, '/edit', arguments: {
                               'index': i,
                               'suggestions': _suggestions
@@ -166,9 +187,9 @@ class _RandomWordsState extends State<RandomWords> {
                                     onPressed: () {
                                       setState(() {
                                         if (alreadySaved) {
-                                          _saved.remove(_suggestions.index(i));
+                                          _saved.remove(_suggestions!.index(i));
                                         } else {
-                                          _saved.add(_suggestions.index(i));
+                                          _saved.add(_suggestions!.index(i));
                                         }
                                       });
                                     },
@@ -176,11 +197,17 @@ class _RandomWordsState extends State<RandomWords> {
                                   IconButton(
                                     icon: const Icon(CupertinoIcons.delete),
                                     onPressed: () {
+                                      (() async {
+                                        await db
+                                            .collection('Words')
+                                            .doc(_suggestions!.index(i).id)
+                                            .delete();
+                                      })();
                                       setState(() {
                                         if (alreadySaved) {
-                                          _saved.remove(_suggestions.index(i));
+                                          _saved.remove(_suggestions!.index(i));
                                         }
-                                        _suggestions.remove(i);
+                                        _suggestions!.remove(i);
                                       });
                                     },
                                   )
@@ -188,7 +215,7 @@ class _RandomWordsState extends State<RandomWords> {
                               ),
                             ),
                             child: Text(
-                              _suggestions.index(i).asPascalCase,
+                              _suggestions!.index(i).asPascalCase,
                               style: _biggerFont,
                               textAlign: TextAlign.center,
                             ),
@@ -198,16 +225,19 @@ class _RandomWordsState extends State<RandomWords> {
                     )
                   : ListView.builder(
                       padding: const EdgeInsets.all(16.0),
-                      itemCount: _suggestions.length * 2,
+                      itemCount:
+                          _suggestions != null ? _suggestions!.length * 2 : 0,
                       itemBuilder: (context, i) {
                         if (i.isOdd) return const Divider();
 
                         final index = i ~/ 2;
 
-                        if (index >= _suggestions.length) return const Text('');
+                        if (index >= _suggestions!.length) {
+                          return const Text('');
+                        }
 
                         final alreadySaved =
-                            _saved.contains(_suggestions.index(index));
+                            _saved.contains(_suggestions!.index(index));
 
                         return ListTile(
                           onTap: () {
@@ -217,7 +247,7 @@ class _RandomWordsState extends State<RandomWords> {
                             }).then((_) => setState((() {})));
                           },
                           title: Text(
-                            _suggestions.index(index).asPascalCase,
+                            _suggestions!.index(index).asPascalCase,
                             style: _biggerFont,
                           ),
                           trailing: Wrap(
@@ -236,21 +266,26 @@ class _RandomWordsState extends State<RandomWords> {
                                 onPressed: () {
                                   setState(() {
                                     if (alreadySaved) {
-                                      _saved.remove(_suggestions.index(index));
+                                      _saved.remove(_suggestions!.index(index));
                                     } else {
-                                      _saved.add(_suggestions.index(index));
+                                      _saved.add(_suggestions!.index(index));
                                     }
                                   });
                                 },
                               ),
                               IconButton(
                                 icon: const Icon(CupertinoIcons.delete),
-                                onPressed: () {
+                                onPressed: () async {
+                                  final id = _suggestions!.index(index).id;
+                                  await db
+                                      .collection('Words')
+                                      .doc(id)
+                                      .delete();
                                   setState(() {
                                     if (alreadySaved) {
-                                      _saved.remove(_suggestions.index(index));
+                                      _saved.remove(_suggestions!.index(index));
                                     }
-                                    _suggestions.remove(index);
+                                    _suggestions!.remove(index);
                                   });
                                 },
                               )

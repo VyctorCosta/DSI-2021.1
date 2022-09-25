@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:first_app/repository.dart';
 import 'package:flutter/material.dart';
 
@@ -54,13 +55,26 @@ class _EditPageState extends State<EditPage> {
                   ),
                 ),
                 ElevatedButton(
-                  onPressed: () {
+                  onPressed: () async {
+                    DocumentReference<Map<String, dynamic>>? res;
                     if (_formKey.currentState!.validate()) {
+                      FirebaseFirestore db = FirebaseFirestore.instance;
+                      if (type == null) {
+                        await db
+                            .collection('Words')
+                            .doc(state.index(index!).id)
+                            .set({'text': newWord, 'textPascalCase': newWord});
+                      } else {
+                        res = await db
+                            .collection('Words')
+                            .add({'text': newWord, 'textPascalCase': newWord});
+                      }
+
                       setState(() {
                         if (type == null) {
                           state.changeWordByIndex(newWord, index!);
                         } else {
-                          state.addWord(newWord);
+                          state.addWord(newWord, res!.id);
                         }
                       });
                       Navigator.pop(context);
